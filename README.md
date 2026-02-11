@@ -34,22 +34,22 @@ See [original repository](https://academiapme-my.sharepoint.com/:u:/g/personal/r
 
 - 01 [Preparing the environment](/Images/01%20Preparing%20the%20environment.png)
 
-<img width="1536" height="1024" alt="01 Preparing the environment" src="https://github.com/user-attachments/assets/8c845a1b-39a5-425f-a4ac-7f2030bee2da" />
+<img width="1536" height="1024" alt="01 Preparing the environment" src="https://github.com/user-attachments/assets/59b3d11c-e8ce-4750-acfd-03d7e5650932" />
 
 ### Screen 02
 
 - 02 [Creating plugins](/Images/02%20Creating%20plugins.png)
 
-<img width="1245" height="897" alt="02 Creating plugins" src="https://github.com/user-attachments/assets/002b96a8-2d9b-4d53-ab44-74f19c0143bf" />
+<img width="1245" height="897" alt="02 Creating plugins" src="https://github.com/user-attachments/assets/86f2f6eb-3685-43d4-9a21-fd00b01cc456" />
 
 ### Screen 03
 
 - 03 [Working with actions](/Images/03%20Working%20with%20actions.png)
 
-<img width="1536" height="1024" alt="03 Working with actions" src="https://github.com/user-attachments/assets/85559e1e-3269-486c-9695-a29917b3577b" />
+<img width="1536" height="1024" alt="03 Working with actions" src="https://github.com/user-attachments/assets/66f74771-2f2a-4f54-84ac-474c984f55f5" />
 
 ### Screen 04
 
 - 04 [Creating the Workflow Assembly](/Images/04%20Creating%20the%20Workflow%20Assembly.png)
 
-<img width="1536" height="1024" alt="04 Creating the Workflow Assembly" src="https://github.com/user-attachments/assets/eb5c6261-e885-435f-a8b1-549555e5bb6c" />
+<img width="1536" height="1024" alt="04 Creating the Workflow Assembly" src="https://github.com/user-attachments/assets/88cdc98a-c7b4-4418-bd79-6d92c688cfc0" />
