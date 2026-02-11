@@ -3,6 +3,7 @@ Daily learning
 # Creating a Canvas-type application with the Power Platform
 
 Project developed at Bootcamp Microsoft - Dynamics 365 with guidance from specialist [Luis Prado](https://www.linkedin.com/in/luis-prado-b7a71427/ "Luis Prado").
+
 Learning to explore the functionality and capabilities of Dynamics 365 using the SDK Extension and the supporting XrmToolBox. During the project, we can develop the creation of custom workflows, plugins, user interface customization, and custom business processes.
 
 ## Steps
