@@ -10,19 +10,19 @@ Learning to explore the functionality and capabilities of Dynamics 365 using the
 
 1. [Preparing the environment](/Images/I%20Preparing%20the%20environment.png)
 
-<img width="1536" height="1024" alt="I Preparing the environment" src="https://github.com/user-attachments/assets/a1b47698-7ee2-4dd5-b092-71ed10630497" />
+<img width="1536" height="338" alt="I Preparing the environment" src="https://github.com/user-attachments/assets/2cb4f258-6ebe-4edc-a099-7b675aea6b49" />
 
 2. [Creating plugins](/Images/II%20Creating%20plugins.png)
 
-<img width="1024" height="1024" alt="II Creating plugins" src="https://github.com/user-attachments/assets/9f2f2af2-ddc8-4748-bbb5-54390d9b46c7" />
+<img width="1024" height="462" alt="II Creating plugins" src="https://github.com/user-attachments/assets/45b5524f-c6a0-4798-b05a-4e74b61c5603" />
 
 3. [Working with actions](/Images/III%20Working%20with%20actions.png)
 
-<img width="1024" height="1024" alt="III Working with actions" src="https://github.com/user-attachments/assets/d3956f5c-0c4c-484a-a87c-e7c12c8d8e16" />
+<img width="1024" height="400" alt="III Working with actions" src="https://github.com/user-attachments/assets/34babb9e-26ef-4eee-967d-88a4e7a18f15" />
 
 4. [Creating the Workflow Assembly](/Images/IV%20Creating%20the%20Workflow%20Assembly.png)
 
-<img width="1024" height="1024" alt="IV Creating the Workflow Assembly" src="https://github.com/user-attachments/assets/0a40741f-b3e7-4ee8-ad84-c98214742c33" />
+<img width="1024" height="396" alt="IV Creating the Workflow Assembly" src="https://github.com/user-attachments/assets/c0cf510b-4e8f-4a53-b8fc-02fb8a99d4a6" />
 
 [LICENSE](/LICENSE)
 
