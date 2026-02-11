@@ -1,0 +1,92 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_gmail": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "acdym_sharedgmail_923f8"
+        },
+        "api": {
+          "name": "shared_gmail"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "6fb215c1-d2e8-4468-a7c2-4b0cd00b99ed"
+          },
+          "type": "Request",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Enviaremail(V2)_Para": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "A list of valid email addresses, separated by a comma or semicolon.",
+                  "x-ms-powerflows-param-ispartial": false
+                },
+                "Enviaremail(V2)_Corpo": {
+                  "type": "string",
+                  "format": "html",
+                  "description": "Outgoing email body. This parameter is used as part of \"0BE687B9-1E4C-4983-8F28-E934B5B1B416\"",
+                  "x-ms-powerflows-param-ispartial": true
+                },
+                "Enviaremail(V2)_Corpo_1": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "Enviaremail(V2)_Para",
+                "Enviaremail(V2)_Corpo",
+                "Enviaremail(V2)_Corpo_1"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Enviar_email_(V2)": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "c9ff85d7-f4a4-4432-9a3b-124124eff119"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_gmail",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_gmail"
+            },
+            "parameters": {
+              "emailMessage/To": "@triggerBody()['Enviaremail(V2)_Para']",
+              "emailMessage/Subject": "New Course Enabled",
+              "emailMessage/Body": "<p>Hello, @{triggerBody()['Enviaremail(V2)_Corpo']}, <br>\nThe course @{triggerBody()['Enviaremail(V2)_Corpo_1']} has been enabled for you!<br>\nGood luck!<br>\nBest regards, DIO Team</p>"
+            },
+            "authentication": {
+              "type": "Raw",
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

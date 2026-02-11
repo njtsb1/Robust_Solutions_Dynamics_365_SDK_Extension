@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="xml" ContentType="application/octet-stream" />
+  <Default Extension="xaml" ContentType="application/octet-stream" />
+  <Default Extension="json" ContentType="application/octet-stream" />
+  <Default Extension="dll" ContentType="application/octet-stream" />
+  <Default Extension="msapp" ContentType="application/octet-stream" />
+  <Override PartName="/WebResources/acdym_ScriptValidations50B6C092-A57D-ED11-81AD-000D3A888906" ContentType="application/octet-stream" />
+  <Override PartName="/WebResources/acdym_PostalCodeLookupScript9DC6ABFF-7F85-ED11-81AD-000D3A888906" ContentType="application/octet-stream" />
+  <Override PartName="/CanvasApps/acdym_app_instructors_enabled_dio_1c64d_BackgroundImageUri" ContentType="application/octet-stream" />
+</Types>
+<?xml version="1.0" encoding="utf-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="xml" ContentType="application/octet-stream" />
+  <Default Extension="xaml" ContentType="application/octet-stream" />
+  <Default Extension="json" ContentType="application/octet-stream" />
+  <Default Extension="dll" ContentType="application/octet-stream" />
+  <Default Extension="msapp" ContentType="application/octet-stream" />
+  <Override PartName="/WebResources/acdym_ScriptValidations50B6C092-A57D-ED11-81AD-000D3A888906" ContentType="application/octet-stream" />
+  <Override PartName="/WebResources/acdym_PostalCodeLookupScript9DC6ABFF-7F85-ED11-81AD-000D3A888906" ContentType="application/octet-stream" />
+  <Override PartName="/CanvasApps/acdym_app_instructors_enabled_dio_1c64d_BackgroundImageUri" ContentType="application/octet-stream" />
+</Types>

@@ -1,0 +1,43 @@
+function SearchCEP(primaryControl) {
+    // navigation data
+    var globalContext = Xrm.Utility.getGlobalContext();
+    
+    // form context
+    var formContext = primaryControl;
+    var cep = formContext.getControl("acdym_cep").getAttribute().getValue();        
+    
+    console.log("zip: " + cep);
+    
+    if (cep) {
+        cep = cep.replace(/\D/g, '');
+        var parameters = {
+            "CepInput": cep
+        };
+       
+        var req = new XMLHttpRequest();
+        req.open("POST", globalContext.getClientUrl() + "/api/data/v9.2/acdym_ActionCEP", true);
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.onreadystatechange = function () {            
+            if (this.readyState == 4 /* complete */) {
+                req.onreadystatechange = null;
+                if (this.status == 200 || this.status == 204) {
+                    Xrm.Utility.alertDialog("Action executed successfully!");
+                    var result = JSON.parse(this.response);
+                    const jsonCEP = JSON.parse(result.ResultadoCEP);
+                    console.log(jsonCEP);
+                    formContext.getAttribute("acdym_logradouro").setValue(jsonCEP.logradouro);
+                    formContext.getAttribute("acdym_bairro").setValue(jsonCEP.bairro);
+                    formContext.getAttribute("acdym_localidade").setValue(jsonCEP.localidade);
+                    formContext.getAttribute("acdym_uf").setValue(jsonCEP.uf);
+                } else {
+                    var error = JSON.parse(this.response).error;
+                    Xrm.Utility.alertDialog("Error in Action: " + error.message);
+                }
+            }
+        };
+        req.send(JSON.stringify(parameters));
+    }
+}

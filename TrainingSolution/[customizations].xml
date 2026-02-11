@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml SolutionManifestVersion="1.0" GeneratedBy="Robust Solutions" GeneratedOn="2026-02-11T09:53:00Z">
+  <SolutionManifest>
+    <UniqueName>robust_solutions_dynamics365_sdk_extensions</UniqueName>
+    <Version>1.0.0.0</Version>
+    <Publisher>
+      <UniqueName>robust_solutions</UniqueName>
+      <FriendlyName>Robust Solutions</FriendlyName>
+      <CustomizationPrefix>acdym</CustomizationPrefix>
+    </Publisher>
+    <DisplayName>ROBUST_SOLUTIONS_DYNAMICS_365_SDK_EXTENSIONS</DisplayName>
+    <Description>Solution containing web resources, workflows and client scripts for DIO training and validations.</Description>
+
+    <Components>
+
+      <!-- Web Resource: acdym_Scriptconsultacep9DC6ABFF-7... -->
+      <Component Type="WebResource" Id="acdym_Scriptconsultacep9DC6ABFF-7">
+        <Name>acdym_Scriptconsultacep9DC6ABFF-7.js</Name>
+        <DisplayName>acdym_Scriptconsultacep</DisplayName>
+        <Description>JavaScript to call ActionCEP and populate address fields from CEP.</Description>
+        <WebResourceType>Script (JScript)</WebResourceType>
+        <Content><![CDATA[
+function BuscaCEP(primaryControl)
+{
+    // navigation data
+    var globalContext = Xrm.Utility.getGlobalContext();
+    
+    // form context
+    var formContext = primaryControl;
+    var cep = formContext.getControl("acdym_cep").getAttribute().getValue();        
+    
+    console.log("acdym_cep: " + cep);
+    
+    if (cep)
+    {
+        cep = cep.replace(/\D/g, '');
+        var parameters = {
+            "CepInput": cep
+        };
+       
+        var req = new XMLHttpRequest();
+        req.open("POST", globalContext.getClientUrl() + "/api/data/v9.2/acdym_ActionCEP", true);
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.onreadystatechange = function ()
+        {            
+            if (this.readyState == 4 /* complete */)
+            {
+                req.onreadystatechange = null;
+                if (this.status == 200 || this.status == 204)
+                {
+                    Xrm.Utility.alertDialog("Action executed successfully...!");                                                    
+                    var result = JSON.parse(this.response);                                                                                            
+                    const jsonCEP = JSON.parse(result.ResultadoCEP);                    
+                    console.log(jsonCEP);
+                    formContext.getAttribute("acdym_logradouro").setValue(jsonCEP.logradouro);    
+                    formContext.getAttribute("acdym_bairro").setValue(jsonCEP.bairro);    
+                    formContext.getAttribute("acdym_localidade").setValue(jsonCEP.localidade);    
+                    formContext.getAttribute("acdym_uf").setValue(jsonCEP.uf);    
+                }
+                else
+                {
+                    var error = JSON.parse(this.response).error;
+                    Xrm.Utility.alertDialog("Error in Action: "+error.message);
+                }
+            }
+        };
+        req.send(JSON.stringify(parameters));
+    }
+}
+        ]]></Content>
+      </Component>
+
+      <!-- Web Resource: acdym_SscriptValidacoes50B6C092-A... -->
+      <Component Type="WebResource" Id="acdym_SscriptValidacoes50B6C092-A">
+        <Name>acdym_SscriptValidacoes50B6C092-A.js</Name>
+        <DisplayName>acdym_SscriptValidacoes</DisplayName>
+        <Description>Client-side validation for CPF and CNPJ formatting and verification.</Description>
+        <WebResourceType>Script (JScript)</WebResourceType>
+        <Content><![CDATA[
+function ValidarCNPJ(executionContext) {
+
+    // validate that execution context was received
+    if (executionContext === null)
+        return;
+
+    // get form context from execution context
+    formContext = executionContext.getFormContext();
+
+    // get the CNPJ value entered by the user
+    var cnpj = executionContext.getEventSource().getValue();
+
+    var label = executionContext.getEventSource().getName();
+
+    // declare isValid as true and validate that the entered CNPJ is not fake,
+    // otherwise set isValid to false
+    var isValid = true;
+    if (cnpj !== null & cnpj !== "") {
+        cnpj = cnpj.replace(/[^\d]+/g, '');
+        if (cnpj.length !== 14 ||
+            cnpj === "00000000000000" ||
+            cnpj === "11111111111111" ||
+            cnpj === "22222222222222" ||
+            cnpj === "33333333333333" ||
+            cnpj === "44444444444444" ||
+            cnpj === "55555555555555" ||
+            cnpj === "66666666666666" ||
+            cnpj === "77777777777777" ||
+            cnpj === "88888888888888" ||
+            cnpj === "99999999999999") {
+            isValid = false;
+        }
+
+        var tamanho = cnpj.length - 2;
+        var numeros = cnpj.substring(0, tamanho);
+        digitos = cnpj.substring(tamanho);
+        var soma = 0;
+        var pos = tamanho - 7;
+
+        for (i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2)
+                pos = 9;
+        }
+
+        resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+        if (resultado.toString() !== digitos.charAt(0)) {
+            isValid = false;
+        }
+
+        tamanho = tamanho + 1;
+        numeros = cnpj.substring(0, tamanho);
+        soma = 0;
+        pos = tamanho - 7;
+        for (i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2)
+                pos = 9;
+        }
+        var resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+        if (resultado.toString() !== digitos.charAt(1)) {
+            isValid = false;
+        }
+    }
+    else {
+        isValid = false;
+    }
+
+    if (isValid) {
+        cnpj = cnpj.substring(0, 2) + '.' + cnpj.substring(2, 5) + '.' + cnpj.substring(5, 8) + '/' + cnpj.substring(8, 12) + '-' + cnpj.substring(12);
+        cnpj = formContext.getAttribute(label).setValue(cnpj);
+    } else {
+        Xrm.Navigation.openAlertDialog({ confirmButtonLabel: "OK", text: "CNPJ " + cnpj + " Invalid" }, { height: 100, width: 300 }).then(
+            function success(result) {
+                cnpj = formContext.getAttribute(label).setValue("");
+                formContext.getAttribute(campoSemFormatacao).setValue("");
+            }
+        );
+    }
+}
+
+function ValidarCPF(executionContext) 
+{
+    // validate that execution context was received
+    if (executionContext === null)
+        return;
+
+    var formContext = executionContext.getFormContext();
+    var cpf = executionContext.getEventSource().getValue();
+    var label = executionContext.getEventSource().getName();
+
+    // assume valid until proven otherwise
+    isValid = true;
+    if (cpf !== null && cpf !== "") {
+        cpf = cpf.replace(/[^\d]+/g, '');
+        var Soma;
+        var Resto;
+        Soma = 0;
+        if (cpf.length !== 11 ||
+            cpf === "00000000000" ||
+            cpf === "11111111111" ||
+            cpf === "22222222222" ||
+            cpf === "33333333333" ||
+            cpf === "44444444444" ||
+            cpf === "55555555555" ||
+            cpf === "66666666666" ||
+            cpf === "77777777777" ||
+            cpf === "88888888888" ||
+            cpf === "99999999999") {
+            isValid = false;
+        }
+
+        for (i = 1; i <= 9; i++) Soma = Soma + parseInt(cpf.substring(i - 1, i)) * (11 - i);
+        Resto = (Soma * 10) % 11;
+
+        if ((Resto === 10) || (Resto === 11)) Resto = 0;
+        if (Resto !== parseInt(cpf.substring(9, 10))) {
+            isValid = false;
+        }
+
+        Soma = 0;
+        for (i = 1; i <= 10; i++) Soma = Soma + parseInt(cpf.substring(i - 1, i)) * (12 - i);
+        Resto = (Soma * 10) % 11;
+
+        if ((Resto === 10) || (Resto === 11)) { Resto = 0; }
+        if (Resto !== parseInt(cpf.substring(10, 11))) {
+            isValid = false;
+        }
+    }
+    else {
+        isValid = false;
+    }
+
+    if (isValid) {
+        cpf = cpf.substring(0, 3) + '.' + cpf.substring(3, 6) + '.' + cpf.substring(6, 9) + '-' + cpf.substring(9);
+        cpf = formContext.getAttribute(label).setValue(cpf);
+    } else {
+        Xrm.Navigation.openAlertDialog({ confirmButtonLabel: "OK", text: "CPF: " + cpf + " - Invalid" }, { height: 100, width: 300 }).then(
+            function success(result) {
+                cpf = formContext.getAttribute(label).setValue("");
+            }
+        );
+    }
+}
+        ]]></Content>
+      </Component>
+
+      <!-- Workflow: ActionCEP (XAML) -->
+      <Component Type="Workflow" Id="ActionCEP-4ABD15EF-03E5-4CD1-A5">
+        <Name>ActionCEP</Name>
+        <DisplayName>ActionCEP</DisplayName>
+        <Description>Custom action to return CEP lookup result (ResultadoCEP).</Description>
+        <PrimaryEntity>acdym_aluno</PrimaryEntity>
+        <Category>Action</Category>
+        <Definition><![CDATA[
+<Activity x:Class="XrmWorkflow4abd15ef03e54cd1a582af7f67a79c32" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxs="clr-namespace:Microsoft.Xrm.Sdk;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxsw="clr-namespace:Microsoft.Xrm.Sdk.Workflow;assembly=Microsoft.Xrm.Sdk.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxswa="clr-namespace:Microsoft.Xrm.Sdk.Workflow.Activities;assembly=Microsoft.Xrm.Sdk.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:srs="clr-namespace:System.Runtime.Serialization;assembly=System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:this="clr-namespace:" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="InputEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+    <x:Property Name="CreatedEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+    <x:Property Name="CepInput" Type="InArgument(x:String)">
+      <x:Property.Attributes>
+        <mxsw:ArgumentRequiredAttribute Value="False" />
+        <mxsw:ArgumentTargetAttribute Value="False" />
+        <mxsw:ArgumentDescriptionAttribute Value="New Argument" />
+        <mxsw:ArgumentDirectionAttribute Value="Input" />
+        <mxsw:ArgumentEntityAttribute Value="" />
+      </x:Property.Attributes>
+    </x:Property>
+    <x:Property Name="ResultadoCEP" Type="OutArgument(x:String)">
+      <x:Property.Attributes>
+        <mxsw:ArgumentRequiredAttribute Value="False" />
+        <mxsw:ArgumentTargetAttribute Value="False" />
+        <mxsw:ArgumentDescriptionAttribute Value="New Argument" />
+        <mxsw:ArgumentDirectionAttribute Value="Output" />
+        <mxsw:ArgumentEntityAttribute Value="" />
+      </x:Property.Attributes>
+    </x:Property>
+  </x:Members>
+  <this:XrmWorkflow4abd15ef03e54cd1a582af7f67a79c32.InputEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflow4abd15ef03e54cd1a582af7f67a79c32.InputEntities>
+  <this:XrmWorkflow4abd15ef03e54cd1a582af7f67a79c32.CreatedEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflow4abd15ef03e54cd1a582af7f67a79c32.CreatedEntities>
+  <mva:VisualBasic.Settings>Assembly references and imported namespaces for internal implementation</mva:VisualBasic.Settings>
+  <mxswa:Workflow />
+</Activity>
+        ]]></Definition>
+      </Component>
+
+      <!-- Workflow: ALUNO - validate required fields (XAML) -->
+      <Component Type="Workflow" Id="ALUNO-Validadopreenchimentodosc">
+        <Name>ALUNO_ValidateRequiredFields</Name>
+        <DisplayName>Student Required Fields Validation</DisplayName>
+        <Description>Validates required fields for student records (email or phone required).</Description>
+        <PrimaryEntity>acdym_aluno</PrimaryEntity>
+        <Category>Workflow</Category>
+        <Definition><![CDATA[
+<Activity x:Class="XrmWorkflowa25a018c35854fe78db9a4614705ac39" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxs="clr-namespace:Microsoft.Xrm.Sdk;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxsq="clr-namespace:Microsoft.Xrm.Sdk.Query;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxswa="clr-namespace:Microsoft.Xrm.Sdk.Workflow.Activities;assembly=Microsoft.Xrm.Sdk.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:s="clr-namespace:System;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:srs="clr-namespace:System.Runtime.Serialization;assembly=System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:this="clr-namespace:" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="InputEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+    <x:Property Name="CreatedEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+    <x:Property Name="CepInput" Type="InArgument(x:String)">
+      <x:Property.Attributes>
+        <mxsw:ArgumentRequiredAttribute Value="False" />
+        <mxsw:ArgumentTargetAttribute Value="False" />
+        <mxsw:ArgumentDescriptionAttribute Value="New Argument" />
+        <mxsw:ArgumentDirectionAttribute Value="Input" />
+        <mxsw:ArgumentEntityAttribute Value="" />
+      </x:Property.Attributes>
+    </x:Property>
+    <x:Property Name="ResultadoCEP" Type="OutArgument(x:String)">
+      <x:Property.Attributes>
+        <mxsw:ArgumentRequiredAttribute Value="False" />
+        <mxsw:ArgumentTargetAttribute Value="False" />
+        <mxsw:ArgumentDescriptionAttribute Value="New Argument" />
+        <mxsw:ArgumentDirectionAttribute Value="Output" />
+        <mxsw:ArgumentEntityAttribute Value="" />
+      </x:Property.Attributes>
+    </x:Property>
+  </x:Members>
+  <this:XrmWorkflowa25a018c35854fe78db9a4614705ac39.InputEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflowa25a018c35854fe78db9a4614705ac39.InputEntities>
+  <this:XrmWorkflowa25a018c35854fe78db9a4614705ac39.CreatedEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflowa25a018c35854fe78db9a4614705ac39.CreatedEntities>
+  <mva:VisualBasic.Settings>Assembly references and imported namespaces for internal implementation</mva:VisualBasic.Settings>
+  <mxswa:Workflow>
+    <mxswa:Workflow.Variables>
+      <Variable x:TypeArguments="x:String" Default="[Nothing]" Name="CustomActivityStep4saida_localParameter" />
+    </mxswa:Workflow.Variables>
+    <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep1: Email or Phone fields empty">
+      <mxswa:ActivityReference.Arguments>
+        <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
+      </mxswa:ActivityReference.Arguments>
+      <mxswa:ActivityReference.Properties>
+        <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
+          <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep2_condition" />
+          <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep2_1" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep2_2" />
+          <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep2_3" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep2_4" />
+        </sco:Collection>
+        <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+          <mxswa:GetEntityProperty Attribute="acdym_email" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="acdym_aluno" Value="[ConditionBranchStep2_2]">
+            <mxswa:GetEntityProperty.TargetType>
+              <InArgument x:TypeArguments="s:Type">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
+                  <x:Null />
+                </mxswa:ReferenceLiteral>
+              </InArgument>
+            </mxswa:GetEntityProperty.TargetType>
+          </mxswa:GetEntityProperty>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Null</InArgument>
+              <x:Null x:Key="Parameters" />
+              <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep2_2]</InArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep2_1]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:GetEntityProperty Attribute="acdym_telefone" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="acdym_aluno" Value="[ConditionBranchStep2_4]">
+            <mxswa:GetEntityProperty.TargetType>
+              <InArgument x:TypeArguments="s:Type">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
+                  <x:Null />
+                </mxswa:ReferenceLiteral>
+              </InArgument>
+            </mxswa:GetEntityProperty.TargetType>
+          </mxswa:GetEntityProperty>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Null</InArgument>
+              <x:Null x:Key="Parameters" />
+              <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep2_4]</InArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep2_3]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateLogicalCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateLogicalCondition">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="mxsq:LogicalOperator" x:Key="LogicalOperator">And</InArgument>
+              <InArgument x:TypeArguments="x:Boolean" x:Key="LeftOperand">[ConditionBranchStep2_1]</InArgument>
+              <InArgument x:TypeArguments="x:Boolean" x:Key="RightOperand">[ConditionBranchStep2_3]</InArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep2_condition]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep2">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep2_condition]</InArgument>
+            </mxswa:ActivityReference.Arguments>
+            <mxswa:ActivityReference.Properties>
+              <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep2">
+                <mxswa:ActivityReference.Properties>
+                  <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
+                  <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+                    <Sequence DisplayName="StopWorkflowStep3: ACTION CANCELED: Please provide Email address or Phone">
+                      <Sequence.Variables>
+                        <Variable x:TypeArguments="x:Object" Name="StopWorkflowStep3_1" />
+                        <Variable x:TypeArguments="x:String" Default="d44f86ef-2194-424a-9db5-bab132c88fe5" Name="stepLabelLabelId" />
+                        <Variable x:TypeArguments="x:String" Default="ACTION CANCELED: Please provide Email address or Phone" Name="stepLabelDescription" />
+                        <Variable x:TypeArguments="x:Int32" Default="1033" Name="stepLabelLanguageCode" />
+                      </Sequence.Variables>
+                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateExpression, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateExpression">
+                        <mxswa:ActivityReference.Arguments>
+                          <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">CreateCrmType</InArgument>
+                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { Microsoft.Xrm.Sdk.Workflow.WorkflowPropertyType.String, "ACTION CANCELED: Please provide Email address or Phone", "String" }]</InArgument>
+                          <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:String" />
+                          </InArgument>
+                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[StopWorkflowStep3_1]</OutArgument>
+                        </mxswa:ActivityReference.Arguments>
+                      </mxswa:ActivityReference>
+                      <TerminateWorkflow DisplayName="StopWorkflowStep3: ACTION CANCELED: Please provide Email address or Phone" Exception="[New Microsoft.Xrm.Sdk.InvalidPluginExecutionException(Microsoft.Xrm.Sdk.OperationStatus.Canceled)]" Reason="[DirectCast(StopWorkflowStep3_1, System.String)]" />
+                    </Sequence>
+                  </sco:Collection>
+                </mxswa:ActivityReference.Properties>
+              </mxswa:ActivityReference>
+              <x:Null x:Key="Else" />
+              <x:Null x:Key="Description" />
+            </mxswa:ActivityReference.Properties>
+          </mxswa:ActivityReference>
+        </sco:Collection>
+        <x:Boolean x:Key="ContainsElseBranch">False</x:Boolean>
+      </mxswa:ActivityReference>
+      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="CustomActivityStep4">
+        <mxswa:ActivityReference.Properties>
+          <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
+            <Variable x:TypeArguments="x:Object" Name="CustomActivityStep4_1" />
+            <Variable x:TypeArguments="x:Object" Name="CustomActivityStep4_1_converted" />
+            <Variable x:TypeArguments="x:Object" Name="CustomActivityStep4_2" />
+            <Variable x:TypeArguments="x:Object" Name="CustomActivityStep4_2_converted" />
+          </sco:Collection>
+          <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+            <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConvertCrmXrmTypes, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConvertCrmXrmTypes">
+              <mxswa:ActivityReference.Arguments>
+                <InArgument x:TypeArguments="x:Object" x:Key="Value">[CustomActivityStep4_1]</InArgument>
+                <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                  <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:EntityReference" />
+                </InArgument>
+                <OutArgument x:TypeArguments="x:Object" x:Key="Result">[CustomActivityStep4_1_converted]</OutArgument>
+              </mxswa:ActivityReference.Arguments>
+            </mxswa:ActivityReference>
+            <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConvertCrmXrmTypes, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConvertCrmXrmTypes">
+              <mxswa:ActivityReference.Arguments>
+                <InArgument x:TypeArguments="x:Object" x:Key="Value">[CustomActivityStep4_2]</InArgument>
+                <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                  <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:EntityReference" />
+                </InArgument>
+                <OutArgument x:TypeArguments="x:Object" x:Key="Result">[CustomActivityStep4_2_converted]</OutArgument>
+              </mxswa:ActivityReference.Arguments>
+            </mxswa:ActivityReference>
+            <mxswa:ActivityReference AssemblyQualifiedName="Treinamento.WFValidaExistenciaEmailFoneAluno, Treinamento, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8ec24c70418fb1d6" DisplayName="CustomActivityStep4">
+              <mxswa:ActivityReference.Arguments>
+                <InArgument x:TypeArguments="mxs:EntityReference" x:Key="usuarioEntrada">[DirectCast(CustomActivityStep4_1_converted, Microsoft.Xrm.Sdk.EntityReference)]</InArgument>
+                <InArgument x:TypeArguments="mxs:EntityReference" x:Key="RegistroContexto">[DirectCast(CustomActivityStep4_2_converted, Microsoft.Xrm.Sdk.EntityReference)]</InArgument>
+                <OutArgument x:TypeArguments="x:String" x:Key="saida">[CustomActivityStep4saida_localParameter]</OutArgument>
+              </mxswa:ActivityReference.Arguments>
+            </mxswa:ActivityReference>
+          </sco:Collection>
+        </mxswa:ActivityReference.Properties>
+      </mxswa:ActivityReference>
+    </mxswa:Workflow>
+</Activity>
+        ]]></Definition>
+      </Component>
+
+      <!-- Workflow: ComportamentocamposconformeTip (XAML) -->
+      <Component Type="Workflow" Id="ComportamentocamposconformeTip">
+        <Name>FieldsBehaviorByPersonType</Name>
+        <DisplayName>Fields Behavior According To Person Type</DisplayName>
+        <Description>Shows/hides CPF/CNPJ and sets required levels based on person type (individual/company).</Description>
+        <PrimaryEntity>account</PrimaryEntity>
+        <Category>Workflow</Category>
+        <Definition><![CDATA[
+<Activity x:Class="XrmWorkflow00000000000000000000000000000000" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mcwc="clr-namespace:Microsoft.Crm.Workflow.ClientActivities;assembly=Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxs="clr-namespace:Microsoft.Xrm.Sdk;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxsq="clr-namespace:Microsoft.Xrm.Sdk.Query;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxswa="clr-namespace:Microsoft.Xrm.Sdk.Workflow.Activities;assembly=Microsoft.Xrm.Sdk.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:s="clr-namespace:System;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:srs="clr-namespace:System.Runtime.Serialization;assembly=System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:this="clr-namespace:" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="InputEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+    <x:Property Name="CreatedEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+  </x:Members>
+  <this:XrmWorkflow00000000000000000000000000000000.InputEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflow00000000000000000000000000000000.InputEntities>
+  <this:XrmWorkflow00000000000000000000000000000000.CreatedEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflow00000000000000000000000000000000.CreatedEntities>
+  <mva:VisualBasic.Settings>Assembly references and imported namespaces for internal implementation</mva:VisualBasic.Settings>
+  <mxswa:Workflow>
+    <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep1">
+      <mxswa:ActivityReference.Arguments>
+        <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
+      </mxswa:ActivityReference.Arguments>
+      <mxswa:ActivityReference.Properties>
+        <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
+          <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep2_condition" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep2_1" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep2_2" />
+          <Variable x:TypeArguments="x:Boolean" Default="False" Name="True" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep3_1" />
+        </sco:Collection>
+        <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+          <mxswa:GetEntityProperty Attribute="acdym_tipodepessoa" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" Value="[ConditionBranchStep2_1]">
+            <mxswa:GetEntityProperty.TargetType>
+              <InArgument x:TypeArguments="s:Type">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
+                  <x:Null />
+                </mxswa:ReferenceLiteral>
+              </InArgument>
+            </mxswa:GetEntityProperty.TargetType>
+          </mxswa:GetEntityProperty>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateExpression, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateExpression">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">CreateCrmType</InArgument>
+              <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { Microsoft.Xrm.Sdk.Workflow.WorkflowPropertyType.OptionSetValue, "379920000", "Picklist" }]</InArgument>
+              <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:OptionSetValue" />
+              </InArgument>
+              <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep2_2]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Equal</InArgument>
+              <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep2_2 }]</InArgument>
+              <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep2_1]</InArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep2_condition]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep2">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep2_condition]</InArgument>
+            </mxswa:ActivityReference.Arguments>
+            <mxswa:ActivityReference.Properties>
+              <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep2">
+                <mxswa:ActivityReference.Properties>
+                  <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
+                  <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+                    <Sequence DisplayName="SetVisibilityStep1: CPF Field Visible">
+                      <mcwc:SetVisibility ControlId="acdym_cpf" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" IsVisible="True" />
+                    </Sequence>
+                    <Sequence DisplayName="SetFieldRequiredLevelStep2: CPF Field Required">
+                      <Assign x:TypeArguments="mxs:Entity" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" Value="[New Entity(&quot;account&quot;)]" />
+                      <Assign x:TypeArguments="s:Guid" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;).Id]" Value="[InputEntities(&quot;primaryEntity&quot;).Id]" />
+                      <mcwc:SetFieldRequiredLevel ControlId="acdym_cpf" ControlType="standard" DisplayName="SetFieldRequiredLevelStep2" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" RequiredLevel="Required" />
+                    </Sequence>
+                    <Sequence DisplayName="SetVisibilityStep3: CNPJ Field Hidden">
+                      <mcwc:SetVisibility ControlId="acdym_cnpj" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" IsVisible="False" />
+                    </Sequence>
+                    <Sequence DisplayName="SetAttributeValueStep4: Clear CNPJ Field">
+                      <Sequence.Variables>
+                        <Variable x:TypeArguments="x:Object" Name="SetAttributeValueStep4_1" />
+                      </Sequence.Variables>
+                      <Assign x:TypeArguments="mxs:Entity" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" Value="[New Entity(&quot;account&quot;)]" />
+                      <Assign x:TypeArguments="s:Guid" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;).Id]" Value="[InputEntities(&quot;primaryEntity&quot;).Id]" />
+                      <mxswa:SetEntityProperty Attribute="acdym_cnpj" Entity="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" EntityName="account" Value="[SetAttributeValueStep4_1]">
+                        <mxswa:SetEntityProperty.TargetType>
+                          <InArgument x:TypeArguments="s:Type">
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:String" />
+                          </InArgument>
+                        </mxswa:SetEntityProperty.TargetType>
+                      </mxswa:SetEntityProperty>
+                      <mcwc:SetAttributeValue DisplayName="SetAttributeValueStep4" Entity="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" EntityName="account" />
+                      <Assign x:TypeArguments="mxs:Entity" To="[InputEntities(&quot;primaryEntity&quot;)]" Value="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" />
+                    </Sequence>
+                  </sco:Collection>
+                </mxswa:ActivityReference.Properties>
+              </mxswa:ActivityReference>
+              <x:Null x:Key="Else" />
+              <x:String x:Key="Description">Person Type Field</x:String>
+            </mxswa:ActivityReference.Properties>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateExpression, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateExpression">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">CreateCrmType</InArgument>
+              <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { Microsoft.Xrm.Sdk.Workflow.WorkflowPropertyType.Boolean, "true" }]</InArgument>
+              <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Boolean" />
+              </InArgument>
+              <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep3_1]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep3">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[True]</InArgument>
+            </mxswa:ActivityReference.Arguments>
+            <mxswa:ActivityReference.Properties>
+              <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep3">
+                <mxswa:ActivityReference.Properties>
+                  <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
+                  <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+                    <Sequence DisplayName="SetVisibilityStep5: CNPJ Field Visible">
+                      <mcwc:SetVisibility ControlId="acdym_cnpj" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" IsVisible="True" />
+                    </Sequence>
+                    <Sequence DisplayName="SetFieldRequiredLevelStep6: CNPJ Field Required">
+                      <Assign x:TypeArguments="mxs:Entity" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" Value="[New Entity(&quot;account&quot;)]" />
+                      <Assign x:TypeArguments="s:Guid" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;).Id]" Value="[InputEntities(&quot;primaryEntity&quot;).Id]" />
+                      <mcwc:SetFieldRequiredLevel ControlId="acdym_cnpj" ControlType="standard" DisplayName="SetFieldRequiredLevelStep6" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" RequiredLevel="Required" />
+                    </Sequence>
+                    <Sequence DisplayName="SetVisibilityStep7: CPF Field Hidden">
+                      <mcwc:SetVisibility ControlId="acdym_cpf" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="account" IsVisible="False" />
+                    </Sequence>
+                    <Sequence DisplayName="SetAttributeValueStep8: Clear CPF Field">
+                      <Sequence.Variables>
+                        <Variable x:TypeArguments="x:Object" Name="SetAttributeValueStep8_1" />
+                      </Sequence.Variables>
+                      <Assign x:TypeArguments="mxs:Entity" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" Value="[New Entity(&quot;account&quot;)]" />
+                      <Assign x:TypeArguments="s:Guid" To="[CreatedEntities(&quot;primaryEntity#Temp&quot;).Id]" Value="[InputEntities(&quot;primaryEntity&quot;).Id]" />
+                      <mxswa:SetEntityProperty Attribute="acdym_cpf" Entity="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" EntityName="account" Value="[SetAttributeValueStep8_1]">
+                        <mxswa:SetEntityProperty.TargetType>
+                          <InArgument x:TypeArguments="s:Type">
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:String" />
+                          </InArgument>
+                        </mxswa:SetEntityProperty.TargetType>
+                      </mxswa:SetEntityProperty>
+                      <mcwc:SetAttributeValue DisplayName="SetAttributeValueStep8" Entity="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" EntityName="account" />
+                      <Assign x:TypeArguments="mxs:Entity" To="[InputEntities(&quot;primaryEntity&quot;)]" Value="[CreatedEntities(&quot;primaryEntity#Temp&quot;)]" />
+                    </Sequence>
+                  </sco:Collection>
+                </mxswa:ActivityReference.Properties>
+              </mxswa:ActivityReference>
+              <x:Null x:Key="Else" />
+              <x:String x:Key="Description"></x:String>
+            </mxswa:ActivityReference.Properties>
+          </mxswa:ActivityReference>
+        </sco:Collection>
+        <x:Boolean x:Key="ContainsElseBranch">False</x:Boolean>
+      </mxswa:ActivityReference.Properties>
+    </mxswa:ActivityReference>
+  </mxswa:Workflow>
+</Activity>
+        ]]></Definition>
+      </Component>
+
+      <!-- Workflow: ValidarquantidadediscinidoAluno-E (XAML) -->
+      <Component Type="Workflow" Id="ValidarquantidadediscinidoAluno-E">
+        <Name>ValidateStudentEnrollmentLimit</Name>
+        <DisplayName>Validate Student Enrollment Limit</DisplayName>
+        <Description>Custom activity that validates the number of enrollments for a student.</Description>
+        <PrimaryEntity>acdym_alunoxcurso</PrimaryEntity>
+        <Category>Workflow</Category>
+        <Definition><![CDATA[
+<Activity x:Class="XrmWorkflowe31908b467bc421987443c71bbc4fe26" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxs="clr-namespace:Microsoft.Xrm.Sdk;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxsq="clr-namespace:Microsoft.Xrm.Sdk.Query;assembly=Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:mxswa="clr-namespace:Microsoft.Xrm.Sdk.Workflow.Activities;assembly=Microsoft.Xrm.Sdk.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" xmlns:s="clr-namespace:System;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:srs="clr-namespace:System.Runtime.Serialization;assembly=System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" xmlns:this="clr-namespace:" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="InputEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+    <x:Property Name="CreatedEntities" Type="InArgument(scg:IDictionary(x:String, mxs:Entity))" />
+  </x:Members>
+  <this:XrmWorkflowe31908b467bc421987443c71bbc4fe26.InputEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflowe31908b467bc421987443c71bbc4fe26.InputEntities>
+  <this:XrmWorkflowe31908b467bc421987443c71bbc4fe26.CreatedEntities>
+    <InArgument x:TypeArguments="scg:IDictionary(x:String, mxs:Entity)" />
+  </this:XrmWorkflowe31908b467bc421987443c71bbc4fe26.CreatedEntities>
+  <mva:VisualBasic.Settings>Assembly references and imported namespaces for internal implementation</mva:VisualBasic.Settings>
+  <mxswa:Workflow>
+    <mxswa:Workflow.Variables>
+      <Variable x:TypeArguments="x:String" Default="[Nothing]" Name="CustomActivityStep3saida_localParameter" />
+    </mxswa:Workflow.Variables>
+    <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep1: If InCourse field equals YES">
+      <mxswa:ActivityReference.Arguments>
+        <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
+      </mxswa:ActivityReference.Arguments>
+      <mxswa:ActivityReference.Properties>
+        <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
+          <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep2_condition" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep2_1" />
+          <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep2_2" />
+        </sco:Collection>
+        <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+          <mxswa:GetEntityProperty Attribute="acdym_emcurso" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="acdym_alunoxcurso" Value="[ConditionBranchStep2_1]">
+            <mxswa:GetEntityProperty.TargetType>
+              <InArgument x:TypeArguments="s:Type">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
+                  <x:Null />
+                </mxswa:ReferenceLiteral>
+              </InArgument>
+            </mxswa:GetEntityProperty.TargetType>
+          </mxswa:GetEntityProperty>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateExpression, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateExpression">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">CreateCrmType</InArgument>
+              <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { Microsoft.Xrm.Sdk.Workflow.WorkflowPropertyType.Boolean, "0" }]</InArgument>
+              <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Boolean" />
+              </InArgument>
+              <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep2_2]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Equal</InArgument>
+              <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep2_2 }]</InArgument>
+              <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep2_1]</InArgument>
+              <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep2_condition]</OutArgument>
+            </mxswa:ActivityReference.Arguments>
+          </mxswa:ActivityReference>
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep2">
+            <mxswa:ActivityReference.Arguments>
+              <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep2_condition]</InArgument>
+            </mxswa:ActivityReference.Arguments>
+            <mxswa:ActivityReference.Properties>
+              <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep2">
+                <mxswa:ActivityReference.Properties>
+                  <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
+                  <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+                    <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="CustomActivityStep3: Execute Assemble Workflow">
+                      <mxswa:ActivityReference.Properties>
+                        <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
+                          <Variable x:TypeArguments="x:Object" Name="CustomActivityStep3_1" />
+                          <Variable x:TypeArguments="x:Object" Name="CustomActivityStep3_1_converted" />
+                          <Variable x:TypeArguments="x:Object" Name="CustomActivityStep3_2" />
+                          <Variable x:TypeArguments="x:Object" Name="CustomActivityStep3_2_converted" />
+                        </sco:Collection>
+                        <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+                          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConvertCrmXrmTypes, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConvertCrmXrmTypes">
+                            <mxswa:ActivityReference.Arguments>
+                              <InArgument x:TypeArguments="x:Object" x:Key="Value">[CustomActivityStep3_1]</InArgument>
+                              <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                                <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:EntityReference" />
+                              </InArgument>
+                              <OutArgument x:TypeArguments="x:Object" x:Key="Result">[CustomActivityStep3_1_converted]</OutArgument>
+                            </mxswa:ActivityReference.Arguments>
+                          </mxswa:ActivityReference>
+                          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConvertCrmXrmTypes, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConvertCrmXrmTypes">
+                            <mxswa:ActivityReference.Arguments>
+                              <InArgument x:TypeArguments="x:Object" x:Key="Value">[CustomActivityStep3_2]</InArgument>
+                              <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
+                                <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:EntityReference" />
+                              </InArgument>
+                              <OutArgument x:TypeArguments="x:Object" x:Key="Result">[CustomActivityStep3_2_converted]</OutArgument>
+                            </mxswa:ActivityReference.Arguments>
+                          </mxswa:ActivityReference>
+                          <mxswa:ActivityReference AssemblyQualifiedName="Treinamento.WFValidaLimiteInscricoesAluno, Treinamento, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8ec24c70418fb1d6" DisplayName="CustomActivityStep3: Execute Assemble Workflow">
+                            <mxswa:ActivityReference.Arguments>
+                              <InArgument x:TypeArguments="mxs:EntityReference" x:Key="usuarioEntrada">[DirectCast(CustomActivityStep3_1_converted, Microsoft.Xrm.Sdk.EntityReference)]</InArgument>
+                              <InArgument x:TypeArguments="mxs:EntityReference" x:Key="RegistroContexto">[DirectCast(CustomActivityStep3_2_converted, Microsoft.Xrm.Sdk.EntityReference)]</InArgument>
+                              <OutArgument x:TypeArguments="x:String" x:Key="saida">[CustomActivityStep3saida_localParameter]</OutArgument>
+                            </mxswa:ActivityReference.Arguments>
+                          </mxswa:ActivityReference>
+                        </sco:Collection>
+                      </mxswa:ActivityReference.Properties>
+                    </mxswa:ActivityReference>
+                  </sco:Collection>
+                </mxswa:ActivityReference.Properties>
+              </mxswa:ActivityReference>
+              <x:Null x:Key="Else" />
+              <x:Null x:Key="Description" />
+            </mxswa:ActivityReference.Properties>
+          </mxswa:ActivityReference>
+        </sco:Collection>
+        <x:Boolean x:Key="ContainsElseBranch">False</x:Boolean>
+      </mxswa:ActivityReference.Properties>
+    </mxswa:ActivityReference>
+  </mxswa:Workflow>
+</Activity>
+        ]]></Definition>
+      </Component>
+
+      <!-- Power Automate flows: renamed trigger parameters and display names -->
+      <Component Type="Flow" Id="PowerApp-EnviaremailV2-01AD120A">
+        <Name>PowerApp_SendEmailV2_01AD120A</Name>
+        <DisplayName>PowerApp SendEmail V2 - SendEmailV2_01AD120A</DisplayName>
+        <Description>Power Automate flow to send notification email when a course is enabled.</Description>
+        <Definition><![CDATA[
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_gmail": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "acdym_sharedgmail_923f8"
+        },
+        "api": {
+          "name": "shared_gmail"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "72e243e8-0c87-4555-a958-9334bdd2166a"
+          },
+          "type": "Request",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "SendEmailV2_To": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "A list of valid email addresses, separated by a comma or semicolon.",
+                  "x-ms-powerflows-param-ispartial": false
+                },
+                "SendEmailV2_Body": {
+                  "type": "string",
+                  "format": "html",
+                  "description": "Outgoing email body. This parameter is used as part of \"407E1323-3B17-41F7-8894-A8010A29906B\"",
+                  "x-ms-powerflows-param-ispartial": true
+                },
+                "SendEmailV2_CourseName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "SendEmailV2_To",
+                "SendEmailV2_Body",
+                "SendEmailV2_CourseName"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Enviar_email_(V2)": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "4cc9b518-cd76-4e3c-9e4b-ca32ce356c19"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_gmail",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_gmail"
+            },
+            "parameters": {
+              "emailMessage/To": "@triggerBody()['SendEmailV2_To']",
+              "emailMessage/Subject": "New Course Enabled",
+              "emailMessage/Body": "<p>Hello @{triggerBody()['SendEmailV2_Body']}, <br>\nThe course @{triggerBody()['SendEmailV2_CourseName']} has been enabled for you as an Instructor.<br>\nGood luck and good work!<br>\nDIO Team.</p>"
+            },
+            "authentication": {
+              "type": "Raw",
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
+]]></Definition>
+      </Component>
+
+      <Component Type="Flow" Id="PowerApp-EnviaremailV2-4D4A16F7">
+        <Name>PowerApp_SendEmailV2_4D4A16F7</Name>
+        <DisplayName>PowerApp SendEmail V2 - SendEmailV2_4D4A16F7</DisplayName>
+        <Description>Alternate Power Automate flow variant for course enablement notifications.</Description>
+        <Definition><![CDATA[
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_gmail": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "acdym_sharedgmail_923f8"
+        },
+        "api": {
+          "name": "shared_gmail"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "e7ae501a-1c7d-4dc6-ab8b-cf11cea2c307"
+          },
+          "type": "Request",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "SendEmailV2_To": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "A list of valid email addresses, separated by a comma or semicolon.",
+                  "x-ms-powerflows-param-ispartial": false
+                },
+                "SendEmailV2_Body": {
+                  "type": "string",
+                  "format": "html",
+                  "description": "Outgoing email body. This parameter is used as part of \"905AF96B-F858-4AB5-86EC-BD2E9C618C93\"",
+                  "x-ms-powerflows-param-ispartial": true
+                },
+                "SendEmailV2_CourseName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "SendEmailV2_To",
+                "SendEmailV2_Body",
+                "SendEmailV2_CourseName"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Enviar_email_(V2)": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "edefcb05-b857-442c-883a-2506f94c2fe8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_gmail",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_gmail"
+            },
+            "parameters": {
+              "emailMessage/To": "@triggerBody()['SendEmailV2_To']",
+              "emailMessage/Subject": "Course Enabled",
+              "emailMessage/Body": "<p>Hello @{triggerBody()['SendEmailV2_Body']}, <br>\nThe course @{triggerBody()['SendEmailV2_CourseName']} has been enabled.<br>\nGood luck.<br>\nDio Team!</p>"
+            },
+            "authentication": {
+              "type": "Raw",
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
+]]></Definition>
+      </Component>
+
+      <Component Type="Flow" Id="PowerApp-EnviaremailV2-84B0E588">
+        <Name>PowerApp_SendEmailV2_84B0E588</Name>
+        <DisplayName>PowerApp SendEmail V2 - SendEmailV2_84B0E588</DisplayName>
+        <Description>Another Power Automate flow variant for sending course enablement emails.</Description>
+        <Definition><![CDATA[
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_gmail": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "acdym_sharedgmail_923f8"
+        },
+        "api": {
+          "name": "shared_gmail"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "6fb215c1-d2e8-4468-a7c2-4b0cd00b99ed"
+          },
+          "type": "Request",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "SendEmailV2_To": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "A list of valid email addresses, separated by a comma or semicolon.",
+                  "x-ms-powerflows-param-ispartial": false
+                },
+                "SendEmailV2_Body": {
+                  "type": "string",
+                  "format": "html",
+                  "description": "Outgoing email body. This parameter is used as part of \"0BE687B9-1E4C-4983-8F28-E934B5B1B416\"",
+                  "x-ms-powerflows-param-ispartial": true
+                },
+                "SendEmailV2_CourseName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "SendEmailV2_To",
+                "SendEmailV2_Body",
+                "SendEmailV2_CourseName"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Enviar_email_(V2)": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "c9ff85d7-f4a4-4432-9a3b-124124eff119"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_gmail",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_gmail"
+            },
+            "parameters": {
+              "emailMessage/To": "@triggerBody()['SendEmailV2_To']",
+              "emailMessage/Subject": "New Course Enabled",
+              "emailMessage/Body": "<p>Hello, @{triggerBody()['SendEmailV2_Body']}, <br>\nThe course @{triggerBody()['SendEmailV2_CourseName']} has been enabled for you!<br>\nGood luck!<br>\nBest regards, DIO Team</p>"
+            },
+            "authentication": {
+              "type": "Raw",
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}
+]]></Definition>
+      </Component>
+
+      <!-- Solution-level settings -->
+      <Component Type="SolutionSettings" Id="SolutionSettings_1">
+        <Name>Solution Settings</Name>
+        <DisplayName>Solution Settings</DisplayName>
+        <Description>General solution settings and included components.</Description>
+      </Component>
+
+    </Components>
+
+    <!-- WebResources listing -->
+    <WebResources>
+      <WebResource Name="acdym_Scriptconsultacep9DC6ABFF-7.js" DisplayName="CEP Lookup Script" Description="Script to call ActionCEP and populate address fields." />
+      <WebResource Name="acdym_SscriptValidacoes50B6C092-A.js" DisplayName="CPF/CNPJ Validation Script" Description="Client-side CPF and CNPJ validation functions." />
+    </WebResources>
+
+    <!-- Workflows listing (updated flow display names) -->
+    <Workflows>
+      <Workflow Name="ActionCEP-4ABD15EF-03E5-4CD1-A5" DisplayName="ActionCEP" PrimaryEntity="acdym_aluno" Category="Action" />
+      <Workflow Name="ALUNO-Validadopreenchimentodosc" DisplayName="Student Required Fields Validation" PrimaryEntity="acdym_aluno" Category="Workflow" />
+      <Workflow Name="ComportamentocamposconformeTip" DisplayName="Fields Behavior According To Person Type" PrimaryEntity="account" Category="Workflow" />
+      <Workflow Name="ValidarquantidadediscinidoAluno-E" DisplayName="Validate Student Enrollment Limit" PrimaryEntity="acdym_alunoxcurso" Category="Workflow" />
+      <Workflow Name="PowerApp-EnviaremailV2-01AD120A" DisplayName="PowerApp SendEmail V2 - SendEmailV2_01AD120A" PrimaryEntity="none" Category="Flow" />
+      <Workflow Name="PowerApp-EnviaremailV2-4D4A16F7" DisplayName="PowerApp SendEmail V2 - SendEmailV2_4D4A16F7" PrimaryEntity="none" Category="Flow" />
+      <Workflow Name="PowerApp-EnviaremailV2-84B0E588" DisplayName="PowerApp SendEmail V2 - SendEmailV2_84B0E588" PrimaryEntity="none" Category="Flow" />
+    </Workflows>
+
+    <Entities>
+      <Entity LogicalName="acdym_aluno" DisplayName="Student" />
+      <Entity LogicalName="acdym_alunoxcurso" DisplayName="StudentCourse" />
+      <Entity LogicalName="account" DisplayName="Account" />
+    </Entities>
+
+    <Relationships />
+    <OptionSets />
+    <RibbonDiff />
+    <LocalizedLabels>
+      <Label LanguageCode="1033" Description="English (United States) translations for display strings." />
+    </LocalizedLabels>
+
+    <SolutionFiles>
+      <File Path="[Content_Types].xml" />
+      <File Path="LICENSE" />
+      <File Path="README.md" />
+      <File Path="solution.xml" />
+    </SolutionFiles>
+
+  </SolutionManifest>
+</ImportExportXml>
