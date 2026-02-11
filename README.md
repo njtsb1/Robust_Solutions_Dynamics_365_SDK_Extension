@@ -1,6 +1,6 @@
 Daily learning
 
-# Creating a Canvas-type application with the Power Platform
+# Creating Robust Solutions in Dynamics 365 with the SDK Extension
 
 Project developed at Bootcamp Microsoft - Dynamics 365 with guidance from specialist [Luis Prado](https://www.linkedin.com/in/luis-prado-b7a71427/ "Luis Prado").
 
